@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ระบบออกใบเสร็จ / ใบเสนอราคา</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--tx:#1d2330;--mu:#6b7385;--bd:#dde1e8;--ac:#1f6feb;--ac2:#fff;--dg:#d33;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#14171d;--card:#1e222b;--tx:#e8eaf0;--mu:#9aa2b3;--bd:#343a47;--ac:#4c8dff;--ac2:#fff;--dg:#ff6b6b}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#14171d;--card:#1e222b;--tx:#e8eaf0;--mu:#9aa2b3;--bd:#343a47;--ac:#4c8dff;--ac2:#fff;--dg:#ff6b6b}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:'Sarabun',system-ui,sans-serif;font-size:15px}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;background:var(--card);border-bottom:1px solid var(--bd);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+h1{font-size:17px;margin:0}
+.wrap{display:grid;grid-template-columns:minmax(340px,460px) 1fr;gap:14px;padding:14px;max-width:1300px;margin:auto}
+.tabs{display:none}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+.card h2{font-size:14px;margin:0 0 8px;color:var(--mu)}
+label{display:block;font-size:12px;color:var(--mu);margin:6px 0 2px}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit;font-size:15px}
+textarea{resize:vertical;min-height:54px}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.sel{display:flex;gap:6px;align-items:center}.sel select{flex:1}
+button{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;padding:7px 11px}
+button.p{background:var(--ac);color:var(--ac2);border-color:var(--ac);font-weight:600}
+button.d{color:var(--dg)}
+.it{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;padding:8px 0;border-bottom:1px dashed var(--bd)}
+.it .ds{grid-column:1/4}.it .lt{font-size:12px;color:var(--mu);grid-column:1/4;text-align:right}
+.tot{display:flex;justify-content:space-between;padding:3px 0}
+.tot.g{font-weight:700;font-size:17px;border-top:1px solid var(--bd);margin-top:4px;padding-top:6px}
+#pv{overflow:hidden}
+#pvbox{width:100%}
+dialog{border:1px solid var(--bd);border-radius:14px;background:var(--card);color:var(--tx);width:min(440px,94vw);padding:16px}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#222;color:#fff;padding:9px 16px;border-radius:20px;display:none;z-index:20}
+/* paper */
+.paper{width:794px;min-height:1123px;background:#fff;color:#111;padding:44px 48px;font-family:'Sarabun',sans-serif;font-size:14px;transform-origin:top left;line-height:1.5}
+.paper h3{margin:0;font-size:28px}
+.paper table{width:100%;border-collapse:collapse;margin-top:14px}
+.paper th{background:#eef1f6;text-align:left;padding:7px 8px;border:1px solid #cfd5df}
+.paper td{padding:7px 8px;border:1px solid #cfd5df;vertical-align:top}
+.r{text-align:right}.c{text-align:center}
+.pt{display:flex;justify-content:space-between;gap:20px}
+.bx{border:1px solid #cfd5df;border-radius:6px;padding:10px 12px;margin-top:14px}
+.sg{display:flex;justify-content:space-around;margin-top:60px;text-align:center}
+.sg div{width:210px;border-top:1px solid #333;padding-top:6px}
+@media(max-width:900px){
+ .wrap{grid-template-columns:1fr;padding:10px}
+ .tabs{display:flex;gap:6px;padding:10px 10px 0}.tabs button{flex:1}.tabs button.on{background:var(--ac);color:var(--ac2)}
+ .wrap.v-ed #pcol,.wrap.v-pv #ecol{display:none}
+}
+</style>
+</head>
+<body>
+<header><h1>🧾 ออกใบเสร็จ / ใบเสนอราคา</h1><button class="p" id="exp" onclick="exportPdf()">ดาวน์โหลด PDF</button></header>
+<div class="tabs"><button id="t1" class="on" onclick="tab('ed')">แก้ไข</button><button id="t2" onclick="tab('pv')">ตัวอย่าง</button></div>
+<div class="wrap v-ed" id="wrap">
+<div id="ecol">
+ <div class="card"><h2>เอกสาร</h2>
+  <label>ชนิดเอกสาร</label><select id="type" onchange="setDoc('type',this.value)"></select>
+  <div class="row"><div><label>เลขที่</label><input id="no" oninput="setDoc('no',this.value,1)"></div><div><label>วันที่</label><input id="date" type="date" oninput="setDoc('date',this.value,1)"></div></div>
+ </div>
+ <div class="card"><h2>ผู้ออกเอกสาร (ชื่อ / หจก. / บจก.)</h2>
+  <div class="sel"><select id="seller" onchange="setDoc('sellerId',this.value)"></select></div>
+  <div class="row" style="margin-top:8px"><button onclick="openForm('seller')">+ เพิ่ม</button><button onclick="openForm('seller',S.doc.sellerId)">แก้ไข</button><button class="d" onclick="askDel('seller')">ลบ</button></div>
+ </div>
+ <div class="card"><h2>ลูกค้า</h2>
+  <div class="sel"><select id="cust" onchange="setDoc('custId',this.value)"></select></div>
+  <div class="row" style="margin-top:8px"><button onclick="openForm('cust')">+ เพิ่ม</button><button onclick="openForm('cust',S.doc.custId)">แก้ไข</button><button class="d" onclick="askDel('cust')">ลบ</button></div>
+ </div>
+ <div class="card"><h2>รายการสินค้า</h2><div id="items"></div>
+  <button style="margin-top:8px;width:100%" onclick="addItem()">+ เพิ่มรายการ</button>
+  <div class="row"><div><label>ส่วนลด (บาท)</label><input id="disc" inputmode="decimal" oninput="setDoc('disc',this.value,1)"></div><div><label>ภาษีมูลค่าเพิ่ม</label><select id="vat" onchange="setDoc('vat',this.value)"><option value="0">ไม่มี</option><option value="7">VAT 7%</option></select></div></div>
+  <div id="tots" style="margin-top:10px"></div>
+ </div>
+ <div class="card"><h2>การชำระเงิน</h2>
+  <label>ประเภทการจ่าย</label><select id="pay" onchange="setDoc('pay',this.value)"><option>เงินสด</option><option>เงินโอน</option></select>
+  <label>หมายเหตุ</label><textarea id="note" oninput="setDoc('note',this.value,1)"></textarea>
+  <p style="font-size:12px;color:var(--mu);margin:8px 0 0">เลขบัญชีและชื่อผู้รับเงินจะดึงจากข้อมูลผู้ออกเอกสาร</p>
+ </div>
+</div>
+<div id="pcol"><div class="card" id="pv"><div id="pvbox"><div class="paper" id="paper"></div></div></div></div>
+</div>
+<dialog id="dlg"></dialog><div id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const KEY='thdoc_v1';
+const TYPES=[['receipt','ใบเสร็จรับเงิน','RC'],['quote','ใบเสนอราคา','QT'],['invoice','ใบแจ้งหนี้','IV'],['tax','ใบกำกับภาษี','TX']];
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S||!S.doc)S={sellers:[],customers:[],doc:{type:'receipt',no:'',date:today(),sellerId:'',custId:'',items:[{d:'',q:1,p:0}],disc:0,vat:0,pay:'เงินสด',note:''}};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',2600)}
+const num=v=>parseFloat(v)||0;
+const fmt=n=>n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+function autoNo(){const t=TYPES.find(x=>x[0]===S.doc.type);const d=new Date();return t[2]+String(d.getFullYear()+543).slice(2)+String(d.getMonth()+1).padStart(2,'0')+'-001'}
+if(!S.doc.no)S.doc.no=autoNo();
+/* Thai baht text */
+const DG=['ศูนย์','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'],PL=['','สิบ','ร้อย','พัน','หมื่น','แสน'];
+function conv(s){let o='';const L=s.length;for(let i=0;i<L;i++){const d=+s[i],p=L-1-i;if(!d)continue;if(p===1)o+=(d===1?'':d===2?'ยี่':DG[d])+'สิบ';else if(p===0&&d===1&&L>1)o+='เอ็ด';else o+=DG[d]+PL[p]}return o}
+function nm(s){s=s.replace(/^0+/,'');if(!s)return '';if(s.length>6)return nm(s.slice(0,-6))+'ล้าน'+conv(s.slice(-6).replace(/^0+/,''));return conv(s)}
+function baht(n){n=Math.round(n*100)/100;if(n<=0)return 'ศูนย์บาทถ้วน';const[b,s]=n.toFixed(2).split('.');return (nm(b)||'ศูนย์')+'บาท'+(s==='00'?'ถ้วน':nm(s)+'สตางค์')}
+function calc(){const sub=S.doc.items.reduce((a,i)=>a+num(i.q)*num(i.p),0);const aft=Math.max(0,sub-num(S.doc.disc));const vat=aft*num(S.doc.vat)/100;return{sub,aft,vat,tot:aft+vat}}
+const sel=()=>S.sellers.find(x=>x.id===S.doc.sellerId),cus=()=>S.customers.find(x=>x.id===S.doc.custId);
+const sName=s=>s?((s.prefix?s.prefix+' ':'')+s.name):'';
+/* editor */
+function renderSel(){
+ $('#type').innerHTML=TYPES.map(t=>`<option value="${t[0]}"${t[0]===S.doc.type?' selected':''}>${t[1]}</option>`).join('');
+ const o=(arr,cur,lab,ph)=>`<option value="">${ph}</option>`+arr.map(x=>`<option value="${x.id}"${x.id===cur?' selected':''}>${esc(lab(x))}</option>`).join('');
+ $('#seller').innerHTML=o(S.sellers,S.doc.sellerId,sName,'— เลือกผู้ออกเอกสาร —');
+ $('#cust').innerHTML=o(S.customers,S.doc.custId,x=>x.name,'— เลือกลูกค้า —');
+ $('#no').value=S.doc.no;$('#date').value=S.doc.date;$('#disc').value=S.doc.disc||'';$('#vat').value=S.doc.vat;$('#pay').value=S.doc.pay;$('#note').value=S.doc.note;
+}
+function renderItems(){
+ $('#items').innerHTML=S.doc.items.map((it,i)=>`<div class="it"><input class="ds" placeholder="ชื่อสินค้า / รายการ" value="${esc(it.d)}" oninput="setItem(${i},'d',this.value)">
+ <input inputmode="decimal" placeholder="จำนวน" value="${it.q}" oninput="setItem(${i},'q',this.value)"><input inputmode="decimal" placeholder="ราคา/หน่วย" value="${it.p||''}" oninput="setItem(${i},'p',this.value)"><button class="d" onclick="delItem(${i})">✕</button>
+ <div class="lt" id="lt${i}">รวม ${fmt(num(it.q)*num(it.p))}</div></div>`).join('');
+}
+function addItem(){S.doc.items.push({d:'',q:1,p:0});renderItems();upd()}
+function delItem(i){S.doc.items.splice(i,1);if(!S.doc.items.length)S.doc.items.push({d:'',q:1,p:0});renderItems();upd()}
+function setItem(i,k,v){S.doc.items[i][k]=v;const e=$('#lt'+i);if(e)e.textContent='รวม '+fmt(num(S.doc.items[i].q)*num(S.doc.items[i].p));upd()}
+function setDoc(k,v,quiet){S.doc[k]=v;if(k==='type'){const old=/^[A-Z]{2}\d{4}-\d{3}$/.test(S.doc.no);if(old||!S.doc.no){S.doc.no=autoNo();$('#no').value=S.doc.no}}upd()}
+function upd(){const c=calc();$('#tots').innerHTML=`<div class="tot"><span>รวมเป็นเงิน</span><span>${fmt(c.sub)}</span></div>`+(num(S.doc.disc)?`<div class="tot"><span>ส่วนลด</span><span>-${fmt(num(S.doc.disc))}</span></div>`:'')+(num(S.doc.vat)?`<div class="tot"><span>VAT ${S.doc.vat}%</span><span>${fmt(c.vat)}</span></div>`:'')+`<div class="tot g"><span>ยอดสุทธิ</span><span>${fmt(c.tot)}</span></div><div style="color:var(--mu);font-size:13px;text-align:right">(${baht(c.tot)})</div>`;renderPaper();save()}
+/* paper */
+function dateTh(v){try{return new Date(v+'T00:00:00').toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'})}catch(e){return v}}
+function renderPaper(){
+ const t=TYPES.find(x=>x[0]===S.doc.type),s=sel(),c=cus(),k=calc();
+ const rows=S.doc.items.map((it,i)=>`<tr><td class="c" style="width:36px">${i+1}</td><td>${esc(it.d)||'&nbsp;'}</td><td class="r" style="width:70px">${esc(it.q)}</td><td class="r" style="width:110px">${fmt(num(it.p))}</td><td class="r" style="width:120px">${fmt(num(it.q)*num(it.p))}</td></tr>`).join('');
+ const ln=(l,v)=>v?`<div>${l}${esc(v)}</div>`:'';
+ const tr=(l,v,b)=>`<div style="display:flex;justify-content:space-between;padding:3px 0;${b?'font-weight:700;font-size:16px;border-top:1px solid #333;margin-top:4px':''}"><span>${l}</span><span>${v}</span></div>`;
+ $('#paper').innerHTML=`<div class="pt"><div style="flex:1">${s?`<div style="font-weight:700;font-size:18px">${esc(sName(s))}</div><div style="white-space:pre-line">${esc(s.addr)}</div>${ln('โทร ',s.tel)}${ln('เลขประจำตัวผู้เสียภาษี ',s.tax)}`:'<i style="color:#999">(ยังไม่ได้เลือกผู้ออกเอกสาร)</i>'}</div>
+ <div style="text-align:right"><h3>${t[1]}</h3><div>เลขที่: ${esc(S.doc.no)}</div><div>วันที่: ${dateTh(S.doc.date)}</div></div></div>
+ <div class="bx"><b>ลูกค้า:</b> ${c?esc(c.name):'<i style="color:#999">(ยังไม่ได้เลือกลูกค้า)</i>'}${c?`<div style="white-space:pre-line">${esc(c.addr)}</div>${ln('โทร ',c.tel)}${ln('เลขประจำตัวผู้เสียภาษี ',c.tax)}`:''}</div>
+ <table><tr><th class="c">#</th><th>รายการ</th><th class="r">จำนวน</th><th class="r">ราคา/หน่วย</th><th class="r">จำนวนเงิน</th></tr>${rows}</table>
+ <div class="pt" style="margin-top:12px"><div style="flex:1">${S.doc.note?`<b>หมายเหตุ:</b><div style="white-space:pre-line">${esc(S.doc.note)}</div>`:''}</div>
+ <div style="width:290px">${tr('รวมเป็นเงิน',fmt(k.sub))}${num(S.doc.disc)?tr('ส่วนลด','-'+fmt(num(S.doc.disc))):''}${num(S.doc.vat)?tr('VAT '+S.doc.vat+'%',fmt(k.vat)):''}${tr('ยอดสุทธิ',fmt(k.tot),1)}</div></div>
+ <div class="bx" style="text-align:center;background:#f6f8fb"><b>ตัวอักษร:</b> (${baht(k.tot)})</div>
+ <div class="bx"><div><b>ประเภทการจ่าย:</b> ${esc(S.doc.pay)}</div>${s&&(s.bank||s.acc)?`<div><b>ธนาคาร:</b> ${esc(s.bank)} &nbsp; <b>เลขที่บัญชี:</b> ${esc(s.acc)}</div><div><b>ชื่อบัญชี / ผู้รับเงิน:</b> ${esc(s.accName||sName(s))}</div>`:''}</div>
+ <div class="sg"><div>ผู้รับเงิน / ผู้ออกเอกสาร</div><div>ลูกค้า / ผู้รับเอกสาร</div></div>`;
+ fit();
+}
+function fit(){const box=$('#pvbox'),p=$('#paper');const sc=Math.min(1,box.clientWidth/794);p.style.transform=`scale(${sc})`;box.style.height=(p.offsetHeight*sc)+'px'}
+addEventListener('resize',fit);
+function tab(v){$('#wrap').className='wrap v-'+v;$('#t1').className=v==='ed'?'on':'';$('#t2').className=v==='pv'?'on':'';setTimeout(fit,30)}
+/* forms */
+const FORMS={
+ seller:{title:'ผู้ออกเอกสาร',list:'sellers',f:[['prefix','ประเภท','sel',['','หจก.','บจก.']],['name','ชื่อ / ชื่อกิจการ'],['addr','ที่อยู่','ta'],['tel','โทรศัพท์'],['tax','เลขประจำตัวผู้เสียภาษี'],['bank','ธนาคาร'],['acc','เลขที่บัญชี'],['accName','ชื่อบัญชี / ชื่อผู้รับเงิน']]},
+ cust:{title:'ลูกค้า',list:'customers',f:[['name','ชื่อลูกค้า / บริษัท'],['addr','ที่อยู่','ta'],['tel','โทรศัพท์'],['tax','เลขประจำตัวผู้เสียภาษี']]}};
+let editing;
+function openForm(kind,id){
+ const F=FORMS[kind];const cur=id?S[F.list].find(x=>x.id===id):null;
+ if(id&&!cur){toast('กรุณาเลือกรายการก่อน');return}
+ editing={kind,id:cur?cur.id:null};
+ $('#dlg').innerHTML=`<h2 style="margin:0 0 6px;font-size:17px">${cur?'แก้ไข':'เพิ่ม'}${F.title}</h2>`+F.f.map(([k,l,t,o])=>{const v=cur?cur[k]||'':'';return `<label>${l}</label>`+(t==='sel'?`<select data-k="${k}">${o.map(x=>`<option value="${x}"${x===v?' selected':''}>${x||'(ไม่มี / บุคคลธรรมดา)'}</option>`).join('')}</select>`:t==='ta'?`<textarea data-k="${k}">${esc(v)}</textarea>`:`<input data-k="${k}" value="${esc(v)}">`)}).join('')+`<div class="row" style="margin-top:14px"><button onclick="$('#dlg').close()">ยกเลิก</button><button class="p" onclick="saveForm()">บันทึก</button></div>`;
+ $('#dlg').showModal();
+}
+function saveForm(){
+ const F=FORMS[editing.kind],o={};document.querySelectorAll('#dlg [data-k]').forEach(e=>o[e.dataset.k]=e.value.trim());
+ if(!o.name){toast('กรุณากรอกชื่อ');return}
+ if(editing.id)Object.assign(S[F.list].find(x=>x.id===editing.id),o);else{o.id=uid();S[F.list].push(o);S.doc[editing.kind==='seller'?'sellerId':'custId']=o.id}
+ $('#dlg').close();renderSel();upd();
+}
+function askDel(kind){
+ const F=FORMS[kind],id=S.doc[kind==='seller'?'sellerId':'custId'],cur=S[F.list].find(x=>x.id===id);
+ if(!cur){toast('กรุณาเลือกรายการก่อน');return}
+ $('#dlg').innerHTML=`<p>ลบ <b>${esc(kind==='seller'?sName(cur):cur.name)}</b> ใช่หรือไม่?</p><div class="row"><button onclick="$('#dlg').close()">ยกเลิก</button><button class="p" style="background:var(--dg);border-color:var(--dg)" onclick="doDel('${kind}','${id}')">ลบ</button></div>`;
+ $('#dlg').showModal();
+}
+function doDel(kind,id){const F=FORMS[kind];S[F.list]=S[F.list].filter(x=>x.id!==id);S.doc[kind==='seller'?'sellerId':'custId']='';$('#dlg').close();renderSel();upd()}
+/* export */
+async function exportPdf(){
+ const b=$('#exp');b.disabled=true;b.textContent='กำลังสร้าง...';
+ let host;
+ try{
+  await document.fonts.ready;
+  host=document.createElement('div');host.style.cssText='position:fixed;left:-10000px;top:0;width:794px;background:#fff';
+  const cl=$('#paper').cloneNode(true);cl.style.transform='none';host.appendChild(cl);document.body.appendChild(host);
+  const cv=await html2canvas(cl,{scale:2,backgroundColor:'#fff',useCORS:true});
+  const pdf=new jspdf.jsPDF('p','mm','a4');const w=210,h=cv.height*w/cv.width,img=cv.toDataURL('image/jpeg',0.95);
+  pdf.addImage(img,'JPEG',0,0,w,h);let left=h-297,pos=0;
+  while(left>0.5){pos-=297;pdf.addPage();pdf.addImage(img,'JPEG',0,pos,w,h);left-=297}
+  const name=(S.doc.no||'document').replace(/[^\w\-ก-๙]/g,'_')+'.pdf';
+  const dl=window.claude&&await window.claude.use('downloads');
+  if(dl){await dl.save({filename:name,data:pdf.output('blob')});toast('บันทึกไฟล์ PDF แล้ว')}
+  else{pdf.save(name);toast('สร้างไฟล์ PDF แล้ว')}
+ }catch(e){if(!e||e.code!=='declined')toast('ไม่สามารถสร้าง PDF ได้');}
+ finally{if(host)host.remove();b.disabled=false;b.textContent='ดาวน์โหลด PDF'}
+}
+renderSel();renderItems();upd();
+if(!S.sellers.length)setTimeout(()=>{try{openForm('seller')}catch(e){}},300);
+</script>
+</body>
+</html>
